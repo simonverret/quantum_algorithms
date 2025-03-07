@@ -219,6 +219,19 @@ class LinearCombinaisonPauliString:
         out /= len(self.pstrs)
         return out
         
+    def diagonal(self):
+        out = []
+        for coefficient, pauli_string in zip(self.coefs, self.pstrs):
+            diagonal_pauli_string = pauli_string.diagonal()
+            out.append(coefficient*diagonal_pauli_string)
+        return out
+
+    def circuits(self):
+        circuits = []
+        for pauli_string in self.pstrs:
+            diagonalizing_circuit = pauli_string.circuit()
+            circuits.append(diagonalizing_circuit)
+        return circuits
 
 
 def run_tests():
