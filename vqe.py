@@ -1,7 +1,12 @@
 #%%
+from pyscf import gto
+
 from qiskit.circuit import QuantumCircuit
 from qiskit.circuit import Parameter
 from qiskit import transpile
+
+from jordan_wigner import JordanWigner
+from energy_vs_distance_H2 import get_hamiltonian_integrals
 
 
 #%% variable circuit
@@ -123,42 +128,55 @@ if __name__ == "__main__":
 
 
     # %%
+
+    params = [0,]
+
+    def get_expected_value_and_counts(
+        observable, 
+        state_circuit, 
+        params = None,
+        execute_opts = {'shots' : 1024, 'seed_simulator' : 1}
+    ):
+        diagonalizing_circuits = observable.circuits()
+        if params is not None:
+            state_circuit = state_circuit.assign_parameters(params)
+            print(state_circuit.draw())
+
+        circuits = []
+        for diagonalizing_circuit in diagonalizing_circuits:
+            circuit = QuantumCircuit(4)
+            circuit.compose(state_circuit, inplace=True)
+            circuit.barrier()
+            circuit.compose(diagonalizing_circuit, inplace=True)
+            circuit.measure_all()
+            circuits.append(circuit)
+        circuits[0].draw('mpl')
+
+        compiled_circuits = transpile(circuits, qasm_simulator)
+        sim_result = qasm_simulator.run(compiled_circuits, **execute_opts).result()
+        counts = sim_result.get_counts()
+        expectation = observable.expectation(counts, verbose=True)
+
+        return expectation, counts
+
+    observable = 2*PauliString.from_str('ZXZX') + 1*PauliString.from_str('IIZZ')
     varform = varform_4qubits_1param
     backend = qasm_simulator
     estimator = Estimator(varform, backend)
-
-    observable = 2*PauliString.from_str('ZXZX') + 1*PauliString.from_str('IIZZ')
-
-    # estimator.set_observable(observable)
-    diagonal_observables = observable.diagonal()
-    diagonalizing_circuits = observable.circuits()
-
-    params = [0,]
     state_circuit = estimator.prepare_state_circuit(params)
 
-    # circuits = estimator.assemble_circuits(state_circuit)\
-    circuits = []
-    for diagonalizing_circuit in diagonalizing_circuits:
-        circuit = QuantumCircuit(4)
-        circuit.compose(state_circuit, inplace=True)
-        circuit.barrier()
-        circuit.compose(diagonalizing_circuit, inplace=True)
-        circuit.measure_all()
-        circuits.append(circuit)
-    circuits[0].draw('mpl')
+    get_expected_value_and_counts(observable, state_circuit)
 
+    #%% H2
 
-    #%% transpile circuit to simulator
-    compiled_circuit = transpile(circuits, qasm_simulator)
-    execute_opts = {'shots' : 1024, 'seed_simulator' : 1}
-    sim_result = qasm_simulator.run(compiled_circuit, **execute_opts).result()
-    counts = sim_result.get_counts()
+    distance=0.735 #units in AA
+    molecule = gto.M(atom = [['H', (0,0,-distance/2)],['H', (0,0,distance/2)]], basis = 'sto-3g')
+    h1_mo_with_spin, h2_mo_with_spin = get_hamiltonian_integrals(molecule)
 
-    observable.expectation(counts, verbose=True)
+    mapping = JordanWigner(h1_mo_with_spin.shape[0])
+    h_lcps = mapping.hamiltonian_lcps(h1_mo_with_spin, h2_mo_with_spin)
 
+    get_expected_value_and_counts(h_lcps, varform_4qubits_1param, params={'a':0})
 
-    #%% idea
-    # pstr.diagonal()
-    # pstr.circuit()
-    # pstr.eigenvalue(result)
-
+    #%%
+    get_expected_value_and_counts(h_lcps, varform_4qubits_3params, params={'a':0, 'b':0, 'c':0})
