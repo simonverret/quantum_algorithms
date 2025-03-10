@@ -96,18 +96,18 @@ class PauliString:
         for i in range(len(self)):
             if self.x_bits[i]:
                 if self.z_bits[i]:
-                    circuit.s(i)
+                    circuit.sdg(i)
                 circuit.h(i)
         return circuit
 
     def eigenvalue(self, bitstr):
         assert len(bitstr)==len(self)
-        eigval = 0
+        eigval = 1
         for i in range(len(bitstr)):
             if str(self)[i] in ['X','Y','Z'] and bitstr[i]=='1':
-                eigval-=1
+                eigval*=-1
             else:
-                eigval+=1
+                eigval*=1
         return eigval
         
     
@@ -216,7 +216,6 @@ class LinearCombinaisonPauliString:
                 if verbose: print(' ', result, eigval, count)
             if verbose: print(" ", pavg/total)
             out += coef*pavg/total
-        out /= len(self.pstrs)
         return out
         
     def diagonal(self):
@@ -341,6 +340,43 @@ def run_tests():
     diagonal_observable = 2*PauliString.from_str('ZZZZ') + 1*PauliString.from_str('IIZZ')
     counts = [{'0110' : 50, '1001' : 50}, {'0110' : 50, '1001' : 50}]
     print(diagonal_observable.expectation(counts, verbose=True))
+
+    pauli_string = PauliString.from_str('ZIXY')
+    diagonalizing_circuit = pauli_string.circuit()
+    diagonal_pauli_string = pauli_string.diagonal()
+    print(diagonal_pauli_string) #should be 'ZIZZ'
+    diagonalizing_circuit.draw('mpl')
+
+    observable = 2*PauliString.from_str('ZZZZ') + 1*PauliString.from_str('IIZZ')
+    diagonal_observables = observable.diagonal() 
+    diagonalizing_circuits = observable.circuits()
+
+    for diagonal_observable in diagonal_observables:
+        print(diagonal_observable)
+        
+    for circuit in diagonalizing_circuits:
+        print(circuit.draw())
+
+    observable = 1*PauliString.from_str('ZIZZ')
+    counts = [{
+        '0000' : 0,
+        '0001' : 0,
+        '0010' : 0,
+        '0011' : 0,
+        '0100' : 0,
+        '0101' : 0,
+        '0110' : 50,
+        '0111' : 0,
+        '1000' : 0,
+        '1001' : 50,
+        '1010' : 0,
+        '1011' : 0,
+        '1100' : 0, 
+        '1111' : 0, 
+        '1110' : 0, 
+        '1111' : 0, 
+        }]
+    print(observable.expectation(counts))
     
 if __name__ == "__main__":
     run_tests()

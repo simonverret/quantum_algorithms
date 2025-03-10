@@ -39,11 +39,10 @@ def get_hamiltonian_integrals(molecule):
 
 
 def dihydrogene_gs_energy(mapping, distance): #units in AA
-        molecule = gto.M(atom = [['H', (0,0,-distance/2)],['H', (0,0,distance/2)]], basis = 'sto-3g')
-        h1_mo_with_spin, h2_mo_with_spin = get_hamiltonian_integrals(molecule)
-        h_lcps = mapping.hamiltonian_lcps(h1_mo_with_spin, h2_mo_with_spin)
-        dissociation_energy = np.linalg.eigvalsh(h_lcps.to_matrix()).min() + molecule.energy_nuc()
-        return dissociation_energy
+    molecule = gto.M(atom = [['H', (0,0,-distance/2)],['H', (0,0,distance/2)]], basis = 'sto-3g')
+    h1_mo_with_spin, h2_mo_with_spin = get_hamiltonian_integrals(molecule)
+    h_lcps = mapping.hamiltonian_lcps(h1_mo_with_spin, h2_mo_with_spin)
+    return np.linalg.eigvalsh(h_lcps.to_matrix()).min() + molecule.energy_nuc()
 
 
 def run():
