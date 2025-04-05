@@ -3,12 +3,12 @@ import numpy as np
 from pyscf import gto
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
+
 from qiskit.circuit import QuantumCircuit
 from qiskit.circuit import Parameter
 from qiskit import transpile
 from qiskit_aer import Aer
 
-from pauli_strings import PauliString
 from jordan_wigner import JordanWigner
 from energy_vs_distance_H2 import get_hamiltonian_integrals, dihydrogene_gs_energy
 
@@ -96,6 +96,8 @@ if __name__ == "__main__":
     plt.plot(x, y2, label="exact")
     plt.ylabel("energy")
     plt.xlabel("distance")
+    plt.legend()
     plt.title("H2")
-    plt.show()
-    # plt.savefig("energy_vs_distance_H2.pdf")
+    # plt.show()
+    plt.savefig("energy_vs_distance_H2.pdf")
+
