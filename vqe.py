@@ -74,8 +74,8 @@ def vqe_energy(hamiltonian, state_circuit):
 def vqe_H2(mapping, distance, state_circuit):
     molecule = gto.M(atom = [['H', (0,0,-distance/2)],['H', (0,0,distance/2)]], basis='sto-3g')
     h1_mo_with_spin, h2_mo_with_spin = get_hamiltonian_integrals(molecule)
-    h_lcps = mapping.hamiltonian_lcps(h1_mo_with_spin, h2_mo_with_spin)
-    return vqe_energy(h_lcps, state_circuit) + molecule.energy_nuc()
+    h_operator = mapping.hamiltonian_operator(h1_mo_with_spin, h2_mo_with_spin)
+    return vqe_energy(h_operator, state_circuit) + molecule.energy_nuc()
 
 
 if __name__ == "__main__":

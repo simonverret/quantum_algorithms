@@ -41,8 +41,8 @@ def get_hamiltonian_integrals(molecule):
 def dihydrogene_gs_energy(mapping, distance): #units in AA
     molecule = gto.M(atom = [['H', (0,0,-distance/2)],['H', (0,0,distance/2)]], basis = 'sto-3g')
     h1_mo_with_spin, h2_mo_with_spin = get_hamiltonian_integrals(molecule)
-    h_lcps = mapping.hamiltonian_lcps(h1_mo_with_spin, h2_mo_with_spin)
-    return np.linalg.eigvalsh(h_lcps.to_matrix()).min() + molecule.energy_nuc()
+    h_operator = mapping.hamiltonian_operator(h1_mo_with_spin, h2_mo_with_spin)
+    return np.linalg.eigvalsh(h_operator.to_matrix()).min() + molecule.energy_nuc()
 
 
 def run():
@@ -54,16 +54,16 @@ def run():
 
     ## This is more a test of Jordan Wigner
     mapping = JordanWigner(h1_mo_with_spin.shape[0])
-    h_lcps = mapping.hamiltonian_lcps(h1_mo_with_spin, h2_mo_with_spin)
+    h_operator = mapping.hamiltonian_operator(h1_mo_with_spin, h2_mo_with_spin)
 
-    print("LCPS")
-    print(h_lcps)
+    print("operator")
+    print(h_operator)
 
     print("\nMatrix")
-    print(np.round(h_lcps.to_matrix().real, 3))
+    print(np.round(h_operator.to_matrix().real, 3))
     
     print("\nEnergy")
-    dissociation_energy = np.linalg.eigvalsh(h_lcps.to_matrix()).min() + molecule.energy_nuc()
+    dissociation_energy = np.linalg.eigvalsh(h_operator.to_matrix()).min() + molecule.energy_nuc()
     print(dissociation_energy)
     
     print(f"\nplot\ndistance, energy")

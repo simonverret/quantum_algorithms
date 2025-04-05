@@ -1,5 +1,5 @@
 import numpy as np
-from pauli_strings import PauliString, LinearCombinaisonPauliString
+from pauli_strings import PauliString, Operator
 
 class JordanWigner:
     def __init__(self, n):
@@ -12,7 +12,7 @@ class JordanWigner:
             self.cdag.append(.5*PauliString.from_str(x_str)+.5j*PauliString.from_str(y_str))
             self.c.append(.5*PauliString.from_str(x_str)-.5j*PauliString.from_str(y_str))
     
-    def hamiltonian_lcps(self, h1, h2):
+    def hamiltonian_operator(self, h1, h2):
         coefs = []
         pstrs = []
         for i in range(self.n):
@@ -26,7 +26,7 @@ class JordanWigner:
                         coefs.extend(0.5*h2[i, j, k, l]*cdagcdagcc_ijkl.coefs)
                         pstrs.extend(cdagcdagcc_ijkl.pstrs)
 
-        return LinearCombinaisonPauliString(coefs, pstrs).combine().apply_threshold().sort()
+        return Operator(coefs, pstrs).combine().apply_threshold().sort()
 
 
 def run_tests():

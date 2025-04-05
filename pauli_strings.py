@@ -85,7 +85,7 @@ class PauliString:
         return out
     
     def mul_coef(self, other):
-        return LinearCombinaisonPauliString([other,], [self,])
+        return Operator([other,], [self,])
     
     def diagonal(self):
         new_z_bits = np.logical_or(self.x_bits, self.z_bits)
@@ -110,10 +110,8 @@ class PauliString:
                 eigval*=1
         return eigval
         
-    
 
-
-class LinearCombinaisonPauliString:
+class Operator:
     def __init__(self, coefs, pstrs):
         self.coefs = np.array(coefs)
         self.pstrs = np.array(pstrs)
@@ -128,23 +126,23 @@ class LinearCombinaisonPauliString:
     def __add__(self, other):
         coefs = np.concat((self.coefs, other.coefs))
         pstrs = np.concat((self.pstrs, other.pstrs))
-        return LinearCombinaisonPauliString(coefs, pstrs)
+        return Operator(coefs, pstrs)
     
     def __sub__(self, other):
         coefs = np.concat((self.coefs, -other.coefs))
         pstrs = np.concat((self.pstrs, other.pstrs))
-        return LinearCombinaisonPauliString(coefs, pstrs)
+        return Operator(coefs, pstrs)
 
     def __mul__(self, other):
-        if isinstance(other, LinearCombinaisonPauliString):
-            return self.mul_lcps(other)
+        if isinstance(other, Operator):
+            return self.mul_operator(other)
         else:
             return self.mul_coef(other)
 
     def __rmul__(self, other):
         return self.__mul__(other)
 
-    def mul_lcps(self, other):
+    def mul_operator(self, other):
         pstrs = []
         coefs = []
         for coef1, pstr1 in zip(self.coefs, self.pstrs):
@@ -152,15 +150,15 @@ class LinearCombinaisonPauliString:
                 pstr, w = pstr1 * pstr2
                 pstrs.append(pstr)
                 coefs.append(coef1*coef2*w)
-        return LinearCombinaisonPauliString(coefs, pstrs)
+        return Operator(coefs, pstrs)
     
     def mul_coef(self, other):
-        return LinearCombinaisonPauliString(other*self.coefs, self.pstrs)
+        return Operator(other*self.coefs, self.pstrs)
         
     def __getitem__(self, key):
         coefs = [self.coefs[key]] if isinstance(key, int) else self.coefs[key]
         pstrs = [self.pstrs[key]] if isinstance(key, int) else self.pstrs[key]
-        return LinearCombinaisonPauliString(coefs, pstrs)
+        return Operator(coefs, pstrs)
     
     def to_zx_bits(self):
         return np.stack([pstr.to_zx_bits() for pstr in self.pstrs])
@@ -181,7 +179,7 @@ class LinearCombinaisonPauliString:
                 pstrs_strs.append(str(pstr))
                 pstrs.append(pstr)
                 coefs.append(self.coefs[np.argwhere(self_pstrs_strs == str(pstr))].sum())
-        return LinearCombinaisonPauliString(coefs, pstrs)
+        return Operator(coefs, pstrs)
 
     def apply_threshold(self, threshold=1e-6):
         coefs = []
@@ -190,11 +188,11 @@ class LinearCombinaisonPauliString:
             if np.abs(coef) > threshold:
                 coefs.append(coef)
                 pstrs.append(pstr)
-        return LinearCombinaisonPauliString(coefs, pstrs)
+        return Operator(coefs, pstrs)
 
     def sort(self):
         idx = np.argsort(self.coefs)
-        return LinearCombinaisonPauliString(self.coefs[idx], self.pstrs[idx])
+        return Operator(self.coefs[idx], self.pstrs[idx])
     
     def to_matrix(self):
         dim = 2**len(self.pstrs[0])
@@ -288,53 +286,53 @@ def run_tests():
     pauli_string_1 = PauliString.from_str('IIXZ')
     pauli_string_2 = PauliString.from_str('IYZZ')
     pauli_strings = np.array([pauli_string_1,pauli_string_2], dtype=PauliString)
-    lcps = LinearCombinaisonPauliString(coefs, pauli_strings)
-    print(lcps)
+    operator = Operator(coefs, pauli_strings)
+    print(operator)
 
-    lcps_single = 1*PauliString.from_str('IIXZ')
-    print(lcps_single)
+    operator_single = 1*PauliString.from_str('IIXZ')
+    print(operator_single)
 
-    lcps = 0.5*pauli_string_1 + 0.5*pauli_string_2
-    print(lcps)
+    operator = 0.5*pauli_string_1 + 0.5*pauli_string_2
+    print(operator)
 
-    lcps_1 = 1*PauliString.from_str('IIXZ')
-    lcps_2 = 1*PauliString.from_str('IYZZ')
-    new_lcps = lcps_1 * lcps_2
-    print(new_lcps)
+    operator_1 = 1*PauliString.from_str('IIXZ')
+    operator_2 = 1*PauliString.from_str('IYZZ')
+    new_operator = operator_1 * operator_2
+    print(new_operator)
 
-    lcps = 1*PauliString.from_str('IIIZ') + 1*PauliString.from_str('IIZI') + 1*PauliString.from_str('IZII') + 1*PauliString.from_str('ZIII')
-    print(lcps[0])
-    print(lcps[1:3])
-    print(lcps[-1])
+    operator = 1*PauliString.from_str('IIIZ') + 1*PauliString.from_str('IIZI') + 1*PauliString.from_str('IZII') + 1*PauliString.from_str('ZIII')
+    print(operator[0])
+    print(operator[1:3])
+    print(operator[-1])
 
     print('zx_bits')
-    zx_bits = lcps.to_zx_bits()
+    zx_bits = operator.to_zx_bits()
     print(zx_bits)
 
     print('xz_bits')
-    xz_bits = lcps.to_xz_bits()
+    xz_bits = operator.to_xz_bits()
     print(xz_bits)
 
     print('ids')
-    ids = lcps.ids()
+    ids = operator.ids()
     print(ids)
 
-    lcps_1 = 1*PauliString.from_str('IIIZ') - 0.5*PauliString.from_str('IIZZ') 
-    lcps_2 = 1*PauliString.from_str('ZZZI') + 0.5*PauliString.from_str('ZZII') 
-    lcps_3 = lcps_1 * lcps_2
-    print(lcps_3)
+    operator_1 = 1*PauliString.from_str('IIIZ') - 0.5*PauliString.from_str('IIZZ') 
+    operator_2 = 1*PauliString.from_str('ZZZI') + 0.5*PauliString.from_str('ZZII') 
+    operator_3 = operator_1 * operator_2
+    print(operator_3)
 
-    lcps_combined = lcps_3.combine()
-    print(lcps_combined)
+    operator_combined = operator_3.combine()
+    print(operator_combined)
 
-    lcps = lcps_combined.apply_threshold()
-    print(lcps)
+    operator = operator_combined.apply_threshold()
+    print(operator)
 
-    lcps = (lcps_1 + lcps_2).sort()
-    print(lcps)
+    operator = (operator_1 + operator_2).sort()
+    print(operator)
 
-    small_lcps = 1*PauliString.from_str('ZZ') + 2*PauliString.from_str('XX')
-    matrix = small_lcps.to_matrix()
+    small_operator = 1*PauliString.from_str('ZZ') + 2*PauliString.from_str('XX')
+    matrix = small_operator.to_matrix()
     print(matrix)
 
     diagonal_observable = 2*PauliString.from_str('ZZZZ') + 1*PauliString.from_str('IIZZ')
